@@ -1,0 +1,130 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Default deny-all catch-all rule
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Common security helpers
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() > 0 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // Validation Blueprint for UserProgress
+    function isValidUserProgress(data, userId, puzzleId) {
+      return data.keys().hasAll(['userId', 'puzzleId', 'gridData', 'timerSeconds', 'hintsUsedCount', 'isCompleted']) &&
+             data.keys().hasOnly(['userId', 'puzzleId', 'gridData', 'timerSeconds', 'hintsUsedCount', 'isCompleted', 'createdAt', 'updatedAt']) &&
+             data.userId == userId &&
+             data.userId == request.auth.uid &&
+             data.puzzleId == puzzleId &&
+             data.puzzleId is string && data.puzzleId.size() <= 128 &&
+             data.gridData is string && data.gridData.size() <= 50000 &&
+             data.timerSeconds is number && data.timerSeconds >= 0 &&
+             data.hintsUsedCount is number && data.hintsUsedCount >= 0 &&
+             data.isCompleted is bool;
+    }
+
+    // Validation Blueprint for UserStats
+    function isValidUserStats(data, userId) {
+      return data.keys().hasAll(['userId', 'totalSolved', 'averageTimeSeconds', 'unlockedBadgeIds']) &&
+             data.keys().hasOnly(['userId', 'totalSolved', 'moroccanSolved', 'scienceSolved', 'specialSolved', 'totalTimeSpentSeconds', 'averageTimeSeconds', 'bestTimeSeconds', 'totalHintsUsed', 'zeroHintCount', 'unlockedBadgeIds', 'solvedHistoryJson', 'updatedAt']) &&
+             data.userId == userId &&
+             data.userId == request.auth.uid &&
+             data.totalSolved is number && data.totalSolved >= 0 &&
+             data.averageTimeSeconds is number && data.averageTimeSeconds >= 0 &&
+             data.unlockedBadgeIds is list && data.unlockedBadgeIds.size() <= 100 &&
+             (!('moroccanSolved' in data) || (data.moroccanSolved is number && data.moroccanSolved >= 0)) &&
+             (!('scienceSolved' in data) || (data.scienceSolved is number && data.scienceSolved >= 0)) &&
+             (!('specialSolved' in data) || (data.specialSolved is number && data.specialSolved >= 0)) &&
+             (!('totalTimeSpentSeconds' in data) || (data.totalTimeSpentSeconds is number && data.totalTimeSpentSeconds >= 0)) &&
+             (!('bestTimeSeconds' in data) || data.bestTimeSeconds == null || (data.bestTimeSeconds is number && data.bestTimeSeconds >= 0)) &&
+             (!('totalHintsUsed' in data) || (data.totalHintsUsed is number && data.totalHintsUsed >= 0)) &&
+             (!('zeroHintCount' in data) || (data.zeroHintCount is number && data.zeroHintCount >= 0)) &&
+             (!('solvedHistoryJson' in data) || (data.solvedHistoryJson is string && data.solvedHistoryJson.size() <= 50000));
+    }
+
+    // User progress collection
+    match /users/{userId}/puzzles/{puzzleId} {
+      allow get: if isOwner(userId) && isValidId(userId) && isValidId(puzzleId);
+      allow list: if isOwner(userId) && isValidId(userId);
+
+      allow create: if isOwner(userId) &&
+                       isValidId(userId) &&
+                       isValidId(puzzleId) &&
+                       isValidUserProgress(incoming(), userId, puzzleId) &&
+                       (!('createdAt' in incoming()) || incoming().createdAt == request.time) &&
+                       (!('updatedAt' in incoming()) || incoming().updatedAt == request.time);
+
+      allow update: if isOwner(userId) &&
+                       isValidId(userId) &&
+                       isValidId(puzzleId) &&
+                       isValidUserProgress(incoming(), userId, puzzleId) &&
+                       incoming().userId == existing().userId &&
+                       incoming().puzzleId == existing().puzzleId &&
+                       (!('updatedAt' in incoming()) || incoming().updatedAt == request.time);
+
+      allow delete: if isOwner(userId) && isValidId(userId) && isValidId(puzzleId);
+    }
+
+    // User achievements & stats collection
+    match /users/{userId}/stats/{statId} {
+      allow get: if isOwner(userId) && isValidId(userId) && isValidId(statId);
+      allow list: if isOwner(userId) && isValidId(userId);
+
+      allow create: if isOwner(userId) &&
+                       isValidId(userId) &&
+                       isValidId(statId) &&
+                       isValidUserStats(incoming(), userId) &&
+                       (!('updatedAt' in incoming()) || incoming().updatedAt == request.time);
+
+      allow update: if isOwner(userId) &&
+                       isValidId(userId) &&
+                       isValidId(statId) &&
+                       isValidUserStats(incoming(), userId) &&
+                       incoming().userId == existing().userId &&
+                       (!('updatedAt' in incoming()) || incoming().updatedAt == request.time);
+
+      allow delete: if isOwner(userId) && isValidId(userId) && isValidId(statId);
+    }
+
+    // Public Visitor Counter
+    match /counters/{counterId} {
+      allow get: if isValidId(counterId);
+      allow list: if false;
+
+      allow create: if isValidId(counterId) &&
+                       incoming().keys().hasAll(['count']) &&
+                       incoming().keys().hasOnly(['count', 'updatedAt']) &&
+                       incoming().count is number &&
+                       incoming().count >= 0 &&
+                       (!('updatedAt' in incoming()) || incoming().updatedAt == request.time);
+
+      allow update: if isValidId(counterId) &&
+                       incoming().keys().hasOnly(['count', 'updatedAt']) &&
+                       incoming().count is number &&
+                       incoming().count >= existing().count &&
+                       (!('updatedAt' in incoming()) || incoming().updatedAt == request.time);
+
+      allow delete: if false;
+    }
+  }
+}

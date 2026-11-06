@@ -1,0 +1,146 @@
+{
+  "entities": {
+    "UserProgress": {
+      "title": "UserProgress",
+      "description": "User puzzle progress state for cross-device synchronization",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "The unique Firebase Auth UID of the owner"
+        },
+        "puzzleId": {
+          "type": "string",
+          "description": "Identifier of the crossword puzzle"
+        },
+        "gridData": {
+          "type": "string",
+          "maxLength": 50000,
+          "description": "JSON serialized string of the user letter grid"
+        },
+        "timerSeconds": {
+          "type": "number",
+          "description": "Time elapsed in seconds"
+        },
+        "hintsUsedCount": {
+          "type": "number",
+          "description": "Number of hints used in this puzzle"
+        },
+        "isCompleted": {
+          "type": "boolean",
+          "description": "Flag indicating if the puzzle is completed"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server creation timestamp"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server update timestamp"
+        }
+      },
+      "required": ["userId", "puzzleId", "gridData", "timerSeconds", "hintsUsedCount", "isCompleted"]
+    },
+    "UserStats": {
+      "title": "UserStats",
+      "description": "User overall puzzle achievements, badge records, and statistics",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "The unique Firebase Auth UID of the user"
+        },
+        "totalSolved": {
+          "type": "number",
+          "description": "Total number of puzzles fully solved"
+        },
+        "moroccanSolved": {
+          "type": "number",
+          "description": "Total Moroccan puzzles solved"
+        },
+        "scienceSolved": {
+          "type": "number",
+          "description": "Total science puzzles solved"
+        },
+        "specialSolved": {
+          "type": "number",
+          "description": "Total special puzzles solved"
+        },
+        "totalTimeSpentSeconds": {
+          "type": "number",
+          "description": "Cumulative time spent across solved puzzles"
+        },
+        "averageTimeSeconds": {
+          "type": "number",
+          "description": "Average solve duration in seconds"
+        },
+        "bestTimeSeconds": {
+          "type": "number",
+          "description": "Fastest solve time in seconds"
+        },
+        "totalHintsUsed": {
+          "type": "number",
+          "description": "Total hints used"
+        },
+        "zeroHintCount": {
+          "type": "number",
+          "description": "Count of puzzles solved with 0 hints"
+        },
+        "unlockedBadgeIds": {
+          "type": "array",
+          "description": "List of unlocked badge identifiers"
+        },
+        "solvedHistoryJson": {
+          "type": "string",
+          "maxLength": 50000,
+          "description": "Serialized history of solved puzzles"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server update timestamp"
+        }
+      },
+      "required": ["userId", "totalSolved", "averageTimeSeconds", "unlockedBadgeIds"]
+    },
+    "VisitorCounter": {
+      "title": "VisitorCounter",
+      "description": "Public global counter tracking total visitors of the crossword app",
+      "type": "object",
+      "properties": {
+        "count": {
+          "type": "number",
+          "description": "Total cumulative visitor count"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Last update timestamp"
+        }
+      },
+      "required": ["count"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}/puzzles/{puzzleId}": {
+      "schema": {
+        "$ref": "UserProgress"
+      },
+      "description": "Stores user crossword state per puzzle for cloud synchronization"
+    },
+    "/users/{userId}/stats/{statId}": {
+      "schema": {
+        "$ref": "UserStats"
+      },
+      "description": "Stores user puzzle achievements and stats record"
+    },
+    "/counters/{counterId}": {
+      "schema": {
+        "$ref": "VisitorCounter"
+      },
+      "description": "Public global visitor count"
+    }
+  }
+}

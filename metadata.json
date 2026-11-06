@@ -1,0 +1,6 @@
+{
+  "name": "شبكة أبو سلمى - الكلمات المتقاطعة",
+  "description": "تطبيق الكلمات المتقاطعة العربي الكلاسيكي بنمط الجريدة الورقية الأصيلة مع أسئلة حقيقية وأدوات مساعدة ذكية.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

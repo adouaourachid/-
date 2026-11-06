@@ -1,0 +1,879 @@
+ممتاز! سأقوم بإضافة قسم جديد كامل للشبكات العلمية (فيزياء، كيمياء، أحياء، فلك، رياضيات، طب) إلى جانب الشبكات المغربية، مع إمكانية الاختيار بين الوضع المغربي والوضع العلمي من خلال أزرار في الأعلى.
+
+إليك الكود الشامل المحدث (ملف واحد فقط):
+
+```html
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>شبكات أبو سلمى - المغربية والعلمية</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&display=swap');
+
+  :root {
+    --bg-color: #f4f1ea;
+    --grid-line: #222;
+    --cell-bg: #fff;
+    --cell-black: #222;
+    --highlight: #ffeb3b;
+    --success: #4caf50;
+    --danger: #f44336;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Amiri', serif;
+    background-color: #2c2c3e;
+    color: #eee;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 15px;
+    min-height: 100vh;
+  }
+
+  h1 { margin-bottom: 10px; color: #ffeb3b; text-shadow: 2px 2px 4px #000; font-size: 26px; }
+
+  /* أزرار اختيار نوع الشبكة */
+  .mode-selector {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 15px;
+  }
+
+  .mode-btn {
+    padding: 12px 25px;
+    background: #3c3c50;
+    color: #eee;
+    border: 2px solid #555;
+    border-radius: 10px;
+    font-family: 'Amiri', serif;
+    font-size: 18px;
+    cursor: pointer;
+    transition: all 0.3s;
+  }
+
+  .mode-btn:hover { background: #4a4a60; }
+  .mode-btn.active {
+    background: #5c6bc0;
+    color: white;
+    border-color: #ffeb3b;
+    box-shadow: 0 0 15px rgba(255, 235, 59, 0.5);
+  }
+
+  .control-bar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 15px;
+    background: #3c3c50;
+    padding: 10px 20px;
+    border-radius: 10px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.4);
+    flex-wrap: wrap;
+    justify-content: center;
+    border: 1px solid #555;
+  }
+
+  .nav-btn {
+    padding: 8px 15px;
+    background: #5c6bc0;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    font-family: 'Amiri', serif;
+    font-size: 16px;
+    cursor: pointer;
+    transition: 0.3s;
+  }
+  .nav-btn:hover { background: #3f51b5; }
+  .nav-btn:disabled { background: #555; cursor: not-allowed; }
+  .nav-btn.danger { background: #e53935; }
+  .nav-btn.danger:hover { background: #c62828; }
+
+  .network-counter {
+    font-size: 20px;
+    font-weight: bold;
+    color: #ffeb3b;
+    min-width: 150px;
+    text-align: center;
+  }
+
+  .timer {
+    font-size: 20px;
+    font-weight: bold;
+    color: #fff;
+    background: #333;
+    padding: 5px 15px;
+    border-radius: 5px;
+    border: 2px solid #ffeb3b;
+    min-width: 100px;
+    text-align: center;
+  }
+  .timer.warning { color: #ff9800; border-color: #ff9800; }
+  .timer.danger { color: #f44336; border-color: #f44336; animation: pulse 1s infinite; }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+  }
+
+  .paper-container {
+    background-color: var(--bg-color);
+    padding: 20px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+    border: 2px solid #888;
+    max-width: 100%;
+    overflow-x: auto;
+  }
+
+  .grid {
+    display: grid;
+    border: 2px solid var(--grid-line);
+    background-color: var(--grid-line);
+    gap: 1px;
+    direction: rtl;
+    margin: 0 auto;
+  }
+
+  .cell {
+    width: 32px;
+    height: 32px;
+    background-color: var(--cell-bg);
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    font-weight: bold;
+    color: #111;
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .cell.black { background-color: var(--cell-black); cursor: default; }
+  .cell.active { background-color: var(--highlight); }
+  .cell.correct input { color: var(--success); }
+  .cell.wrong input { color: var(--danger); }
+
+  .cell input {
+    width: 100%;
+    height: 100%;
+    border: none;
+    background: transparent;
+    text-align: center;
+    font-size: 16px;
+    font-weight: bold;
+    font-family: 'Amiri', serif;
+    outline: none;
+    color: #1a237e;
+  }
+
+  .arrow {
+    position: absolute;
+    font-size: 8px;
+    color: #000;
+    line-height: 1;
+  }
+  .arrow-up { top: 1px; right: 2px; }
+  .arrow-left { left: 2px; top: 1px; }
+  .arrow.hidden { display: none; }
+
+  .clue-panel {
+    margin-top: 15px;
+    width: 100%;
+    max-width: 900px;
+    background: #3c3c50;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.4);
+    display: none;
+    text-align: center;
+    border-right: 6px solid #ffeb3b;
+    border: 1px solid #555;
+  }
+
+  .clue-panel.active { display: block; }
+
+  .clue-panel h3 { font-size: 22px; margin-bottom: 10px; color: #ffeb3b; }
+
+  .clue-panel .clue-text {
+    font-size: 24px;
+    line-height: 1.6;
+    color: #fff;
+    background: #2c2c3e;
+    padding: 15px;
+    border-radius: 5px;
+    margin-bottom: 15px;
+  }
+
+  .clue-panel .clue-hint {
+    font-size: 16px;
+    color: #aaa;
+    margin-top: 5px;
+  }
+
+  .btn {
+    padding: 10px 20px;
+    background: #5c6bc0;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    font-size: 18px;
+    cursor: pointer;
+    font-family: 'Amiri', serif;
+    margin: 0 5px;
+  }
+  .btn:hover { background: #3f51b5; }
+  .btn-check { background: #ff9800; }
+  .btn-check:hover { background: #f57c00; }
+  .btn-hint { background: #9c27b0; }
+  .btn-hint:hover { background: #7b1fa2; }
+
+  .controls { margin-top: 15px; display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+
+  .select-wrapper {
+    margin-top: 15px;
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    background: #3c3c50;
+    padding: 10px 15px;
+    border-radius: 10px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.4);
+    border: 1px solid #555;
+    flex-wrap: wrap;
+  }
+  
+  select {
+    padding: 8px;
+    font-family: 'Amiri', serif;
+    font-size: 16px;
+    border-radius: 5px;
+    border: 1px solid #888;
+    background: #2c2c3e;
+    color: #fff;
+    cursor: pointer;
+  }
+
+  .difficulty-badge {
+    background: #e53935;
+    color: white;
+    padding: 4px 12px;
+    border-radius: 15px;
+    font-size: 14px;
+    font-weight: bold;
+  }
+
+  .science-badge {
+    background: #2196f3;
+  }
+
+  @media (max-width: 768px) {
+    .cell { width: 24px; height: 24px; font-size: 12px; }
+    .paper-container { padding: 5px; }
+    .clue-panel { width: 95%; }
+    .arrow { font-size: 6px; }
+    h1 { font-size: 20px; }
+    .control-bar { gap: 6px; padding: 8px; }
+    .mode-btn { font-size: 14px; padding: 8px 15px; }
+  }
+</style>
+</head>
+<body>
+
+<h1>🔥 شبكات أبو سلمى 🔥</h1>
+
+<!-- اختيار نوع الشبكة -->
+<div class="mode-selector">
+  <button class="mode-btn active" id="modeMoroccan" onclick="switchMode('moroccan')">🇲🇦 مغربية</button>
+  <button class="mode-btn" id="modeScience" onclick="switchMode('science')">🔬 علمية</button>
+</div>
+
+<div class="control-bar">
+  <button class="nav-btn" id="prevBtn" onclick="prevNetwork()">السابق ◀</button>
+  <div class="network-counter" id="counter">الشبكة 1 من 50</div>
+  <button class="nav-btn" id="nextBtn" onclick="nextNetwork()">التالي ▶</button>
+  <div class="timer" id="timer">00:00</div>
+  <button class="nav-btn danger" onclick="toggleHardMode()" id="hardModeBtn">وضع صعب: مفعل</button>
+  <button class="nav-btn danger" onclick="generateNewNetwork()">➕ شبكة جديدة</button>
+</div>
+
+<div class="paper-container">
+  <div class="grid" id="grid"></div>
+</div>
+
+<div class="clue-panel" id="cluePanel">
+  <h3>الدليل / اللغز</h3>
+  <div class="clue-text" id="clueText">اضغط على مربع للبدء...</div>
+  <div class="clue-hint" id="clueHint"></div>
+  <div class="controls">
+    <button class="btn" onclick="moveNext()">التالي ⬅️</button>
+    <button class="btn btn-check" onclick="checkAnswer()">تحقق ✅</button>
+    <button class="btn btn-hint" onclick="showHint()">💡 تلميح</button>
+    <button class="btn" onclick="closePanel()">إغلاق ❌</button>
+  </div>
+</div>
+
+<div class="select-wrapper">
+  <label for="networkSelect">انتقل إلى:</label>
+  <select id="networkSelect" onchange="switchNetwork(parseInt(this.value))"></select>
+  <span class="difficulty-badge" id="badgeText">صعب جداً</span>
+</div>
+
+<script>
+  // ==================== بنك الألغاز المغربية الصعبة ====================
+  const moroccanCluesBank = [
+    // تاريخ مغربي
+    { text: "أول سلالة إسلامية حكمت المغرب وأسست فاس", answer: "إدريسية", hint: "تأسست على يد إدريس الأول" },
+    { text: "سلالة أمازيغية أسست مراكش وبنَت الكتبية", answer: "مرابطون", hint: "من الصحراء، عاصمتهم مراكش" },
+    { text: "سلالة أسست جامع حسان وبرجها في الرباط", answer: "موحدون", hint: "بنو عبد المؤمن" },
+    { text: "سلالة بنت المدرسة البوعنانية في فاس", answer: "مرينيون", hint: "من بني مرين" },
+    { text: "سلالة حكمت المغرب من فاس وأصلها من الشرق", answer: "وطاسيون", hint: "حكموا قبل السعديين" },
+    { text: "سلالة حكمت المغرب من مراكش وأصلها من الجنوب", answer: "سعديون", hint: "أسسوا دولة في مراكش" },
+    { text: "سلالة حكمت المغرب من فاس حتى اليوم", answer: "علويون", hint: "من مولاي علي الشريف" },
+    { text: "مؤسس الدولة العلوية", answer: "الرشيد", hint: "أخوه محمد" },
+    { text: "ملك المغرب الذي حكم من 1961 إلى 1999", answer: "الحسن الثاني", hint: "والد الملك الحالي" },
+    { text: "ملك المغرب الحالي", answer: "محمد السادس", hint: "تولى العرش عام 1999" },
+    { text: "معركة شهيرة انتصر فيها المغاربة على البرتغال", answer: "وادي المخازن", hint: "عام 1578" },
+    { text: "قلعة تاريخية في مراكش بناها الموحدون", answer: "الكتبية", hint: "مسجد شهير" },
+    // جغرافيا
+    { text: "أعلى قمة في المغرب وشمال أفريقيا", answer: "توبقال", hint: "في سلسلة الأطلس الكبير" },
+    { text: "سلسلة جبلية تمتد من الشمال الشرقي إلى الجنوب الغربي", answer: "أطلس", hint: "ثلاث سلاسل" },
+    { text: "أطول نهر في المغرب", answer: "درعة", hint: "ينبع من الأطلس الكبير" },
+    { text: "نهر يمر بفاس", answer: "سبو", hint: "ثاني أطول نهر" },
+    { text: "نهر يمر بمراكش", answer: "تانسيفت", hint: "قرب المدينة الحمراء" },
+    { text: "صحراء مغربية شهيرة بالكثبان الرملية", answer: "مرزوكة", hint: "قرب الرشيدية" },
+    { text: "مضيق يفصل المغرب عن إسبانيا", answer: "جبل طارق", hint: "بين طنجة وطريفة" },
+    { text: "مدينة مغربية أثرية قريبة من فاس", answer: "وليلي", hint: "موقع روماني" },
+    { text: "مدينة مغربية تشتهر بالورد", answer: "قلعة مݣونة", hint: "في الجنوب الشرقي" },
+    // أمازيغية وثقافة
+    { text: "رقصة أمازيغية جماعية في الأطلس", answer: "أحواش", hint: "رقصة الأطلس الكبير" },
+    { text: "فن شعبي أمازيغي من الأطلس المتوسط", answer: "أحيدوس", hint: "رقصة جماعية" },
+    { text: "حروف أمازيغية قديمة", answer: "تيفيناغ", hint: "أبجدية أمازيغية" },
+    { text: "شجرة مغربية شهيرة تستخرج منها الزيوت", answer: "أركان", hint: "في سوس" },
+    // أكلات
+    { text: "طبق مغربي من الكبد والدهون", answer: "بولفاف", hint: "طبق شعبي" },
+    { text: "طبق مغربي من الفول المطحون", answer: "بيصارة", hint: "طبق فطور" },
+    { text: "حساء مغربي تقليدي في رمضان", answer: "حريرة", hint: "طبق رمضان" },
+    { text: "طبق مغربي من الكسكس", answer: "كسكس", hint: "الطبق الوطني" },
+    { text: "حلوى مغربية بالعسل والسمسم", answer: "شباكية", hint: "حلوى رمضان" },
+    { text: "حلوى مغربية بالتمر", answer: "مقروض", hint: "حلوى العيد" },
+    { text: "حلوى مغربية باللوز", answer: "غريبة", hint: "حلوى شهيرة" },
+    { text: "حلوى مغربية على شكل قرن غزال", answer: "كعب غزال", hint: "حلوى الأعراس" },
+    { text: "شاي مغربي شهير بالنعناع", answer: "أتاي", hint: "شاي مغربي" },
+    { text: "خبز مغربي تقليدي", answer: "مسمّن", hint: "خبز رقيق" },
+    // تراث
+    { text: "لباس مغربي تقليدي للرجال", answer: "جلابة", hint: "لباس فضفاض" },
+    { text: "لباس مغربي تقليدي للنساء", answer: "قفطان", hint: "لباس نسائي" },
+    { text: "غطاء رأس مغربي تقليدي", answer: "طربوش", hint: "قبعة حمراء" },
+    { text: "منزل مغربي تقليدي", answer: "رياض", hint: "منزل بفناء" },
+    { text: "زخرفة مغربية شهيرة", answer: "زليج", hint: "بلاط مزخرف" },
+    { text: "آلة موسيقية مغربية", answer: "كمانجة", hint: "آلة وترية" },
+    { text: "مهرجان مغربي شهير", answer: "موازين", hint: "في الرباط" },
+    // رياضة ومتنوع
+    { text: "منتخب المغرب لكرة القدم يلقب بـ", answer: "أسود الأطلس", hint: "لقب المنتخب" },
+    { text: "نادي مغربي شهير من الدار البيضاء", answer: "الوداد", hint: "نادي أحمر" },
+    { text: "نادي مغربي شهير من الدار البيضاء", answer: "الرجاء", hint: "نادي أخضر" },
+    { text: "عملة المغرب", answer: "درهم", hint: "عملة وطنية" },
+    { text: "شعار المغرب في العلم", answer: "نجمة", hint: "خماسية" },
+    { text: "لغة رسمية في المغرب", answer: "عربية", hint: "لغة رسمية" },
+  ];
+
+  // ==================== بنك الألغاز العلمية (فيزياء، كيمياء، أحياء، فلك، رياضيات، طب) ====================
+  const scienceCluesBank = [
+    // ===== فيزياء =====
+    { text: "وحدة قياس القوة في الفيزياء", answer: "نيوتن", hint: "نسبة إلى عالم إنجليزي" },
+    { text: "سرعة الضوء في الفراغ تقارب 300 ألف...", answer: "كيلومتر", hint: "في الثانية" },
+    { text: "قانون يربط بين الكتلة والتسارع والقوة", answer: "نيوتن الثاني", hint: "F=ma" },
+    { text: "طاقة الجسم بسبب حركته", answer: "حركية", hint: "طاقة الحركة" },
+    { text: "جسيم أولي يحمل شحنة سالبة", answer: "إلكترون", hint: "يدور حول النواة" },
+    { text: "جسيم أولي موجب الشحنة في النواة", answer: "بروتون", hint: "في نواة الذرة" },
+    { text: "جسيم متعادل في نواة الذرة", answer: "نيوترون", hint: "لا شحنة له" },
+    { text: "وحدة قياس شدة التيار الكهربائي", answer: "أمبير", hint: "نسبة إلى عالم فرنسي" },
+    { text: "وحدة قياس الجهد الكهربائي", answer: "فولت", hint: "نسبة إلى عالم إيطالي" },
+    { text: "عالم ألماني صاحب نظرية النسبية", answer: "أينشتاين", hint: "E=mc²" },
+    { text: "عالم إنجليزي صاحب قانون الجذب", answer: "نيوتن", hint: "التفاحة" },
+    { text: "ظاهرة تحلل الضوء الأبيض إلى ألوان", answer: "تششت", hint: "قوس قزح" },
+    { text: "أسرع شيء في الكون", answer: "الضوء", hint: "300 ألف كم/ث" },
+    { text: "وحدة قياس الطاقة", answer: "جول", hint: "نسبة إلى عالم إنجليزي" },
+    { text: "جهاز لقياس الضغط الجوي", answer: "بارومتر", hint: "قياس الضغط" },
+    { text: "جهاز لقياس درجة الحرارة", answer: "ترمومتر", hint: "قياس الحرارة" },
+    { text: "القوة التي تجذب الأجسام نحو الأرض", answer: "جاذبية", hint: "قوة الجذب" },
+    { text: "مادة توصل الكهرباء", answer: "موصل", hint: "مثل النحاس" },
+    { text: "مادة لا توصل الكهرباء", answer: "عازل", hint: "مثل البلاستيك" },
+    { text: "الوحدة الأساسية للطاقة في الغذاء", answer: "سعرة", hint: "كالوري" },
+
+    // ===== كيمياء =====
+    { text: "أخف عنصر في الجدول الدوري", answer: "هيدروجين", hint: "الرمز H" },
+    { text: "عنصر أساسي في تنفس الكائنات الحية", answer: "أكسجين", hint: "الرمز O" },
+    { text: "عنصر أساسي في المركبات العضوية", answer: "كربون", hint: "الرمز C" },
+    { text: "معدن سائل في درجة حرارة الغرفة", answer: "زئبق", hint: "الرمز Hg" },
+    { text: "مادة تتكون من ذرتين هيدروجين وذرة أكسجين", answer: "ماء", hint: "H2O" },
+    { text: "غاز يسبب الاحتباس الحراري", answer: "ثاني أكسيد الكربون", hint: "CO2" },
+    { text: "الحمض الموجود في المعدة", answer: "كلوريدريك", hint: "HCl" },
+    { text: "الرقم الهيدروجيني للماء النقي", answer: "سبعة", hint: "pH متعادل" },
+    { text: "عنصر يستخدم في صناعة المجوهرات", answer: "ذهب", hint: "الرمز Au" },
+    { text: "مادة تستخدم في تعقيم الجروح", answer: "يود", hint: "مطهر" },
+    { text: "أشهر عالم كيمياء روسي وضع الجدول الدوري", answer: "مندليف", hint: "الجدول الدوري" },
+    { text: "العنصر الأكثر وفرة في القشرة الأرضية", answer: "أكسجين", hint: "الرمز O" },
+
+    // ===== أحياء =====
+    { text: "وحدة بناء الكائن الحي", answer: "خلية", hint: "أصغر وحدة حية" },
+    { text: "العضو المسؤول عن ضخ الدم", answer: "قلب", hint: "عضلة" },
+    { text: "العضو المسؤول عن التنفس", answer: "رئة", hint: "تبادل الغازات" },
+    { text: "العضو المسؤول عن التفكير", answer: "دماغ", hint: "مركز الجهاز العصبي" },
+    { text: "عملية تصنيع الغذاء في النبات", answer: "بناء ضوئي", hint: "باستخدام الضوء" },
+    { text: "صبغة خضراء في النبات", answer: "كلوروفيل", hint: "لون أخضر" },
+    { text: "أكبر عضو في جسم الإنسان", answer: "جلد", hint: "يغطي الجسم" },
+    { text: "سائل أحمر ينقل الأكسجين", answer: "دم", hint: "سائل الحياة" },
+    { text: "أصغر عظمة في جسم الإنسان", answer: "ركاب", hint: "في الأذن" },
+    { text: "الحمض النووي المسؤول عن الوراثة", answer: "دنا", hint: "DNA" },
+    { text: "عالم وضع نظرية التطور", answer: "داروين", hint: "أصل الأنواع" },
+    { text: "عالم مسلم رائد في الطب", answer: "ابن سينا", hint: "القانون في الطب" },
+    { text: "جهاز مناعة الجسم", answer: "مناعة", hint: "مقاومة الأمراض" },
+    { text: "فصيلة الدم العالمية المانحة", answer: "O", hint: "فصيلة المعطي العام" },
+    { text: "أكبر حيوان على وجه الأرض", answer: "حوت أزرق", hint: "ثديي بحري" },
+
+    // ===== فلك =====
+    { text: "أقرب كوكب إلى الشمس", answer: "عطارد", hint: "أصغر كواكب المجموعة" },
+    { text: "الكوكب الأحمر", answer: "المريخ", hint: "لونه أحمر" },
+    { text: "أكبر كوكب في المجموعة الشمسية", answer: "المشتري", hint: "كوكب الغاز" },
+    { text: "الكوكب الذي نعيش عليه", answer: "الأرض", hint: "الكوكب الأزرق" },
+    { text: "كوكب له حلقات شهيرة", answer: "زحل", hint: "حلقات من الجليد" },
+    { text: "نجم مركز مجموعتنا الشمسية", answer: "الشمس", hint: "نجمنا" },
+    { text: "القمر الطبيعي للأرض", answer: "القمر", hint: "يدور حول الأرض" },
+    { text: "ظاهرة حجب القمر للشمس", answer: "كسوف", hint: "حجب الشمس" },
+    { text: "ظاهرة حجب الأرض للقمر", answer: "خسوف", hint: "حجب القمر" },
+    { text: "مجرة تحتوي على نظامنا الشمسي", answer: "درب التبانة", hint: "مجرة حلزونية" },
+    { text: "عالم فلك إيطالي اكتشف أقمار المشتري", answer: "غاليليو", hint: "أول من استخدم التلسكوب" },
+    { text: "أبعد كوكب عن الشمس", answer: "نبتون", hint: "الكوكب الأزرق" },
+    { text: "كوكب يدور حوله 8 كواكب", answer: "الشمس", hint: "مركز المجموعة" },
+
+    // ===== رياضيات =====
+    { text: "ناتج 7 × 8", answer: "56", hint: "جدول الضرب" },
+    { text: "عدد أولي أكبر من 10", answer: "11", hint: "لا يقبل القسمة إلا على نفسه" },
+    { text: "مجموع زوايا المثلث", answer: "180", hint: "بالدرجات" },
+    { text: "عالم رياضيات يوناني شهير", answer: "فيثاغورس", hint: "نظرية المثلث" },
+    { text: "ناتج 9 × 9", answer: "81", hint: "جدول الضرب" },
+    { text: "جذر تربيعي للعدد 16", answer: "4", hint: "4×4" },
+    { text: "عدد أضلاع المربع", answer: "4", hint: "شكل رباعي" },
+    { text: "العدد باي التقريبي", answer: "3.14", hint: "π" },
+    { text: "عالم رياضيات عربي وضع علم الجبر", answer: "الخوارزمي", hint: "أبو الجبر" },
+    { text: "ناتج 5 × 6", answer: "30", hint: "جدول الضرب" },
+
+    // ===== طب وصحة =====
+    { text: "فيتامين موجود في الشمس", answer: "د", hint: "فيتامين أشعة الشمس" },
+    { text: "فيتامين موجود في البرتقال", answer: "ج", hint: "فيتامين C" },
+    { text: "مرض يسببه نقص الأنسولين", answer: "سكري", hint: "ارتفاع السكر" },
+    { text: "عضو يفرز الأنسولين", answer: "بنكرياس", hint: "غدة" },
+    { text: "مادة تسبب الحساسية", answer: "هيستامين", hint: "تسبب العطس" },
+    { text: "أفضل مشروب لصحة الجسم", answer: "ماء", hint: "H2O" },
+    { text: "عدد أسنان الإنسان البالغ", answer: "32", hint: "تشمل ضروس العقل" },
+    { text: "أصغر كائن مسبب للمرض", answer: "فيروس", hint: "أصغر من البكتيريا" },
+    { text: "لقاح يقي من شلل الأطفال", answer: "شلل", hint: "لقاح" },
+    { text: "عضو يستخدم للشم", answer: "أنف", hint: "حاسة الشم" },
+  ];
+
+  // ==================== مولّد الشبكات ====================
+  function shuffleArray(arr) {
+    const a = [...arr];
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  }
+
+  function generateHardGridData(size = 18) {
+    const data = [];
+    for (let r = 0; r < size; r++) {
+      const row = [];
+      for (let c = 0; c < size; c++) {
+        row.push(Math.random() < 0.2 ? 0 : 1);
+      }
+      data.push(row);
+    }
+    let whiteCount = 0;
+    for (let r = 0; r < size; r++)
+      for (let c = 0; c < size; c++)
+        if (data[r][c] === 1) whiteCount++;
+    
+    while (whiteCount < 250) {
+      const r = Math.floor(Math.random() * size);
+      const c = Math.floor(Math.random() * size);
+      if (data[r][c] === 0) {
+        data[r][c] = 1;
+        whiteCount++;
+      }
+    }
+    return data;
+  }
+
+  function generateHardClues(gridData, bank, count = 28) {
+    const whiteCells = [];
+    for (let r = 0; r < gridData.length; r++)
+      for (let c = 0; c < gridData[r].length; c++)
+        if (gridData[r][c] === 1) whiteCells.push({ r, c });
+
+    const shuffledCells = shuffleArray(whiteCells);
+    const shuffledClues = shuffleArray(bank);
+    const clues = {};
+    let placed = 0;
+    let clueIndex = 0;
+
+    for (let i = 0; i < shuffledCells.length && placed < count && clueIndex < shuffledClues.length; i++) {
+      const { r, c } = shuffledCells[i];
+      const clue = shuffledClues[clueIndex];
+      const direction = placed % 2 === 0 ? 'h' : 'v';
+      
+      let canPlace = true;
+      const len = clue.answer.length;
+      
+      if (direction === 'h') {
+        for (let k = 0; k < len; k++) {
+          if (c - k < 0 || gridData[r][c - k] !== 1) { canPlace = false; break; }
+        }
+        if (canPlace && !clues[`${r},${c}`]) {
+          clues[`${r},${c}`] = { text: clue.text, dir: 'أفقي', answer: clue.answer, hint: clue.hint };
+          placed++;
+          clueIndex++;
+        }
+      } else {
+        for (let k = 0; k < len; k++) {
+          if (r + k >= gridData.length || gridData[r + k][c] !== 1) { canPlace = false; break; }
+        }
+        if (canPlace && !clues[`${r},${c}_v`]) {
+          clues[`${r},${c}_v`] = { text: clue.text, dir: 'عمودي', answer: clue.answer, hint: clue.hint };
+          placed++;
+          clueIndex++;
+        }
+      }
+    }
+    return clues;
+  }
+
+  function createNewHardNetwork(bank) {
+    const gridData = generateHardGridData(18);
+    const clues = generateHardClues(gridData, bank, 28);
+    return { gridData, clues };
+  }
+
+  // ==================== إدارة الأوضاع ====================
+  let currentMode = 'moroccan'; // 'moroccan' أو 'science'
+  let networks = [];
+  let currentNetworkIndex = 0;
+  let currentClueKey = null;
+  let hardMode = true;
+  let timerInterval = null;
+  let seconds = 0;
+
+  const gridElement = document.getElementById('grid');
+  const cluePanel = document.getElementById('cluePanel');
+  const clueText = document.getElementById('clueText');
+  const clueHint = document.getElementById('clueHint');
+  const counter = document.getElementById('counter');
+  const prevBtn = document.getElementById('prevBtn');
+  const nextBtn = document.getElementById('nextBtn');
+  const networkSelect = document.getElementById('networkSelect');
+  const timerEl = document.getElementById('timer');
+  const hardModeBtn = document.getElementById('hardModeBtn');
+  const badgeText = document.getElementById('badgeText');
+
+  function getActiveBank() {
+    return currentMode === 'moroccan' ? moroccanCluesBank : scienceCluesBank;
+  }
+
+  function initNetworksForMode() {
+    networks = [];
+    for (let i = 0; i < 50; i++) {
+      networks.push(createNewHardNetwork(getActiveBank()));
+    }
+    currentNetworkIndex = 0;
+    currentClueKey = null;
+    closePanel();
+    gridElement.innerHTML = '';
+    initGrid();
+    updateNav();
+    startTimer();
+    badgeText.textContent = currentMode === 'moroccan' ? 'صعب مغربي' : 'صعب علمي';
+    badgeText.className = 'difficulty-badge' + (currentMode === 'science' ? ' science-badge' : '');
+  }
+
+  function switchMode(mode) {
+    if (currentMode === mode) return;
+    currentMode = mode;
+    
+    // تحديث أزرار الوضع
+    document.getElementById('modeMoroccan').classList.toggle('active', mode === 'moroccan');
+    document.getElementById('modeScience').classList.toggle('active', mode === 'science');
+    
+    initNetworksForMode();
+  }
+
+  // ==================== المؤقت ====================
+  function startTimer() {
+    clearInterval(timerInterval);
+    seconds = 0;
+    timerEl.textContent = '00:00';
+    timerEl.className = 'timer';
+    timerInterval = setInterval(() => {
+      seconds++;
+      const mins = String(Math.floor(seconds / 60)).padStart(2, '0');
+      const secs = String(seconds % 60).padStart(2, '0');
+      timerEl.textContent = `${mins}:${secs}`;
+      if (seconds >= 300) timerEl.className = 'timer danger';
+      else if (seconds >= 180) timerEl.className = 'timer warning';
+    }, 1000);
+  }
+
+  function stopTimer() {
+    clearInterval(timerInterval);
+  }
+
+  function toggleHardMode() {
+    hardMode = !hardMode;
+    hardModeBtn.textContent = hardMode ? 'وضع صعب: مفعل' : 'وضع صعب: معطل';
+    document.querySelectorAll('.arrow').forEach(arrow => {
+      arrow.classList.toggle('hidden', hardMode);
+    });
+  }
+
+  function updateNav() {
+    counter.textContent = `الشبكة ${currentNetworkIndex + 1} من ${networks.length}`;
+    prevBtn.disabled = currentNetworkIndex === 0;
+    nextBtn.disabled = currentNetworkIndex === networks.length - 1;
+    
+    networkSelect.innerHTML = '';
+    networks.forEach((_, i) => {
+      const opt = document.createElement('option');
+      opt.value = i;
+      opt.textContent = `شبكة ${i + 1}`;
+      if (i === currentNetworkIndex) opt.selected = true;
+      networkSelect.appendChild(opt);
+    });
+  }
+
+  function switchNetwork(index) {
+    if (index < 0 || index >= networks.length) return;
+    currentNetworkIndex = index;
+    currentClueKey = null;
+    closePanel();
+    gridElement.innerHTML = '';
+    initGrid();
+    updateNav();
+    startTimer();
+  }
+
+  function prevNetwork() { switchNetwork(currentNetworkIndex - 1); }
+  function nextNetwork() { switchNetwork(currentNetworkIndex + 1); }
+
+  function generateNewNetwork() {
+    networks.push(createNewHardNetwork(getActiveBank()));
+    switchNetwork(networks.length - 1);
+  }
+
+  function initGrid() {
+    const data = networks[currentNetworkIndex];
+    const { gridData } = data;
+    
+    gridElement.style.gridTemplateColumns = `repeat(${gridData[0].length}, 1fr)`;
+    
+    for (let r = 0; r < gridData.length; r++) {
+      for (let c = 0; c < gridData[r].length; c++) {
+        const cell = document.createElement('div');
+        cell.className = 'cell';
+        cell.dataset.row = r;
+        cell.dataset.col = c;
+
+        if (gridData[r][c] === 0) {
+          cell.classList.add('black');
+        } else {
+          const input = document.createElement('input');
+          input.type = 'text';
+          input.maxLength = 1;
+          
+          input.addEventListener('input', (e) => {
+            e.target.value = e.target.value.replace(/[^ء-ي0-9]/g, '');
+            moveNext(); 
+          });
+          
+          input.addEventListener('click', (e) => {
+            e.stopPropagation();
+            handleCellClick(r, c);
+          });
+          
+          cell.appendChild(input);
+
+          if (c === 0 || gridData[r][c-1] === 0) {
+            const arrow = document.createElement('span');
+            arrow.className = 'arrow arrow-left' + (hardMode ? ' hidden' : '');
+            arrow.innerHTML = '◀';
+            cell.appendChild(arrow);
+          }
+          if (r === 0 || gridData[r-1][c] === 0) {
+            const arrow = document.createElement('span');
+            arrow.className = 'arrow arrow-up' + (hardMode ? ' hidden' : '');
+            arrow.innerHTML = '▲';
+            cell.appendChild(arrow);
+          }
+        }
+        cell.addEventListener('click', () => handleCellClick(r, c));
+        gridElement.appendChild(cell);
+      }
+    }
+  }
+
+  function handleCellClick(r, c) {
+    const data = networks[currentNetworkIndex];
+    if (data.gridData[r][c] === 0) return;
+
+    document.querySelectorAll('.cell.active').forEach(el => el.classList.remove('active'));
+    document.querySelectorAll('.cell.correct').forEach(el => el.classList.remove('correct'));
+    document.querySelectorAll('.cell.wrong').forEach(el => el.classList.remove('wrong'));
+    
+    const cell = document.querySelector(`.cell[data-row="${r}"][data-col="${c}"]`);
+    if (cell) cell.classList.add('active');
+
+    const keyH = `${r},${c}`;
+    const keyV = `${r},${c}_v`;
+
+    if (data.clues[keyH]) {
+      currentClueKey = keyH;
+      clueText.innerHTML = `<strong>[${data.clues[keyH].dir}]</strong> ${data.clues[keyH].text}`;
+      clueHint.textContent = hardMode ? '' : `💡 ${data.clues[keyH].hint || ''}`;
+      cluePanel.classList.add('active');
+      cell.querySelector('input').focus();
+    } else if (data.clues[keyV]) {
+      currentClueKey = keyV;
+      clueText.innerHTML = `<strong>[${data.clues[keyV].dir}]</strong> ${data.clues[keyV].text}`;
+      clueHint.textContent = hardMode ? '' : `💡 ${data.clues[keyV].hint || ''}`;
+      cluePanel.classList.add('active');
+      cell.querySelector('input').focus();
+    } else {
+      clueText.innerHTML = "لا يوجد سؤال مسجل لهذه الخانة (اضغط على خانة أخرى).";
+      clueHint.textContent = '';
+      cluePanel.classList.add('active');
+      cell.querySelector('input').focus();
+    }
+  }
+
+  function moveNext() {
+    if (!currentClueKey) return;
+    const data = networks[currentNetworkIndex];
+    const currentInput = document.activeElement;
+    
+    if (currentInput && currentInput.tagName === 'INPUT') {
+      const row = parseInt(currentInput.parentElement.dataset.row);
+      const col = parseInt(currentInput.parentElement.dataset.col);
+      
+      let nextRow = row;
+      let nextCol = col;
+
+      if (currentClueKey.includes('_v')) {
+        nextRow++; 
+      } else {
+        nextCol--;
+      }
+
+      if (nextRow >= 0 && nextRow < data.gridData.length && nextCol >= 0 && nextCol < data.gridData[0].length && data.gridData[nextRow][nextCol] === 1) {
+        const nextCell = document.querySelector(`.cell[data-row="${nextRow}"][data-col="${nextCol}"]`);
+        if (nextCell) nextCell.querySelector('input').focus();
+      }
+    }
+  }
+
+  function checkAnswer() {
+    if (!currentClueKey) return;
+    const data = networks[currentNetworkIndex];
+    const clue = data.clues[currentClueKey];
+    const answer = clue.answer;
+    
+    let [startR, startC] = currentClueKey.replace('_v', '').split(',').map(Number);
+    let isVertical = currentClueKey.includes('_v');
+    
+    let isValid = true;
+    let inputs = [];
+
+    for (let i = 0; i < answer.length; i++) {
+      let r = startR + (isVertical ? i : 0);
+      let c = startC + (!isVertical ? -i : 0);
+      
+      if (r >= data.gridData.length || c < 0) break;
+
+      const cell = document.querySelector(`.cell[data-row="${r}"][data-col="${c}"]`);
+      if (!cell) break;
+      
+      const input = cell.querySelector('input');
+      if (!input) break;
+
+      inputs.push(input);
+      const val = input.value.trim();
+      
+      if (val !== answer[i]) {
+        isValid = false;
+      }
+    }
+
+    if (isValid) {
+      inputs.forEach(input => input.parentElement.classList.add('correct'));
+      alert("إجابة صحيحة! أحسنت 🌟");
+    } else {
+      inputs.forEach(input => {
+        if (input.value.trim() !== '') {
+          input.parentElement.classList.add('wrong');
+        }
+      });
+      alert("إجابة خاطئة، حاول مرة أخرى 🤔");
+    }
+  }
+
+  function showHint() {
+    if (!currentClueKey) return;
+    const data = networks[currentNetworkIndex];
+    const clue = data.clues[currentClueKey];
+    if (clue.hint) {
+      clueHint.textContent = `💡 ${clue.hint}`;
+    } else {
+      clueHint.textContent = "لا يوجد تلميح متاح لهذا السؤال.";
+    }
+  }
+
+  function closePanel() {
+    cluePanel.classList.remove('active');
+    document.querySelectorAll('.cell.active').forEach(el => el.classList.remove('active'));
+    currentClueKey = null;
+  }
+
+  // ==================== البدء ====================
+  initNetworksForMode();
+</script>
+</body>
+</html>
+```
+
+✨ ما الجديد في هذا الإصدار؟
+
+1. قسمان كاملان:
+   · 🇲🇦 مغربية: 50 شبكة صعبة بألغاز مغربية (تاريخ، جغرافيا، تراث، أكلات...).
+   · 🔬 علمية: 50 شبكة صعبة بألغاز علمية (فيزياء، كيمياء، أحياء، فلك، رياضيات، طب).
+2. زرّان في الأعلى للتبديل بين الوضعين:
+   · زر "🇲🇦 مغربية" (أزرق).
+   · زر "🔬 علمية" (سيتم تلوينه بالأزرق السماوي عند التفعيل).
+   · عند التبديل، يتم توليد 50 شبكة جديدة تلقائياً من البنك المختار.
+3. بنك الألغاز العلمية: أكثر من 70 لغزاً علمياً موزعة على:
+   · الفيزياء: نيوتن، أينشتاين، الإلكترون، البروتون...
+   · الكيمياء: الهيدروجين، الأكسجين، مندليف، pH...
+   · الأحياء: الخلية، القلب، الدماغ، داروين، ابن سينا...
+   · الفلك: عطارد، المريخ، المشتري، الشمس، الكسوف...
+   · الرياضيات: فيثاغورس، الخوارزمي، باي، الجذور...
+   · الطب: فيتامين د، السكري، البنكرياس، الأسنان...
+4. شارة صعوبة ديناميكية: تظهر "صعب مغربي" أو "صعب علمي" حسب الوضع.
+5. كل المميزات السابقة محفوظة: الوضع الصعب (إخفاء الأسهم)، المؤقت، التحقق، التلميحات، شبكة 18×18.
+
+💡 كيف تضيف المزيد من الألغاز العلمية؟ فقط أضفها إلى مصفوفة scienceCluesBank بنفس الصيغة.
+
+هل تريد إضافة وضع ثالث مثل "شبكات دينية" أو "شبكات رياضية"؟
